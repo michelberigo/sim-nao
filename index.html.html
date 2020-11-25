@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+        <title>Sim ou Não</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/png" href="img/favicon.ico"/>
+        <link href="css/style.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+        <script src="https://unpkg.com/vue"></script>
+    </head>
+
+    <body>
+        <main role="main" class="container" id="app">
+            <h1 class="text-center mt-5">FAÇA UMA PERGUNTA E EU TE RESPONDEREI</h1>
+
+            <div class="row">
+                <div class="col-sm-6 offset-sm-3 form-group">
+                    <input v-model="pergunta" class="form-control form-control-lg" placeholder="Digite aqui a sua dúvida">
+                </div>
+            </div>
+
+            <h4 class="text-center mb-3">{{ resposta }}</h4>
+
+            <div class="text-center">
+                <img v-bind:src="imagem">
+            </div>
+        </main>
+
+        <script src="https://cdn.jsdelivr.net/npm/axios@0.12.0/dist/axios.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/lodash@4.13.1/lodash.min.js"></script>
+
+        <script>
+            var app = new Vue({
+                el: '#app',
+                data: {
+                    pergunta: '',
+                    resposta: '',
+                    imagem: ''
+                },
+                watch: {
+                    pergunta: function (newQuestion, oldQuestion) {
+                        this.debouncedGetResposta();
+                    }
+                },
+                created: function () {
+                    this.debouncedGetResposta = _.debounce(this.getResposta, 500)
+                },
+                methods: {
+                    getResposta: function () {
+                        if (this.pergunta == '') {
+                            this.resposta = '';
+                        } else if (this.pergunta.indexOf('?') === -1) {
+                            this.resposta = 'Necessário colocar o ponto de interrogação "?"';
+                        } else {
+                            this.resposta = 'Pensando...';
+
+                            var vm = this;
+
+                            axios.get('https://yesno.wtf/api')
+                                .then(function (response) {
+                                    let resposta = vm.traduzirResposta(response.data.answer);
+
+                                    vm.resposta = 'A resposta é ' + resposta;
+                                    vm.imagem = response.data.image;
+
+                                    console.log(vm.imagem);
+                                })
+                                .catch(function (error) {
+                                    vm.resposta = 'Error! Could not reach the API. ' + error;
+                                });
+                        }
+                    },
+                    traduzirResposta: function (resposta) {
+                        switch (resposta) {
+                            case 'yes':
+                                resposta = 'SIM!';
+                                break;
+                            case 'no':
+                                resposta = 'NÃO!';
+                                break;
+                            case 'maybe':
+                                resposta = 'TALVEZ!';
+                                break;
+                            default:
+                                resposta = 'DESCUBRA';
+                                break;
+                        }
+
+                        return resposta;
+                    }
+                }
+            })
+        </script>
+    </body>
+</html>
